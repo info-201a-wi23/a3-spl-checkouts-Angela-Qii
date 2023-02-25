@@ -5,82 +5,123 @@ output: html_document
 
 ### Introduction
 
-An introduction of the data and a description of the trends/books/items you are choosing to analyze (and why!)
+I chose to analyze data on books with subjects that include "Self Help" in the years 2005-2022. In recent years, mental health conditions have increased world-wide. Many mental health awareness movements have emerged to emphasize the importance of mental health and pushed the topic to the forefront of people's minds. Coming out of a period with large historic events, such as the 2020 Black Lives Matter protests and the COVID-19 pandemic, there has been tremendous unseen impacts on mental health. I am curious to see if this shift in self-wellness is reflected in Seattle Public Library book checkouts. 
+
 
 ### Summary Information
 
-Write a summary paragraph of findings that includes the 5 values calculated from your summary information R script
-
-These will likely be calculated using your DPLYR skills, answering questions such as:
-
-- What is the average number of checkouts for each item?
-- What is the month or year with the most/least checkouts for a book that you're interested in?
-- What is the month or year with the most/least checkouts for ebooks?
-- How has the number of print book checkouts changed over time?
-
-Feel free to calculate and report values that you find relevant.
+In my findings, the average number of checkouts for self help titles is 1285 a month at the Seattle Public Library, with each title getting checked out an average of 3.77 times. The average number of checkouts for self help titles in a year is 15212 a year. There has been a steady increase in the number of checkouts of self help books with the most number of checkouts occurring in 2022 and the least amount of checkouts occurring in 2005. The number checkouts for physical self help books in the Seattle Public Library have increased overtime with a small decline in 2020. I also calculated the most checked out books in each year to see which self help titles were the most popular. The most checked out self help books throughout the years contained a healthy mix of books, video recordings, and eBooks, including titles like "Mozart and the whale," "The Fault in our Stars," and "The Light We Carry: Overcoming in Uncertain Times."
 
 ### The Dataset
 
-- Who collected/published the data?  
-- What are the parameters of the data (dates, number of checkouts, kinds of books, etc.)?
-- How was the data collected or generated?  
-- Why was the data collected?  
-- What, if any, ethical questions do you need to consider when working with this data?  
-- What are possible limitations or problems with this data?   (at least 200 words)
+The Seattle government collects data from the Seattle Public Library. The data is collected from 2005 to current day and collected initial checkouts of physical and electronic media like books, eBook, audio books, movies, etc. available at the library. Checkout data comes from multiple current and historical records. For digital items, they get data from media vendors like, Overdrive, hoopla, Freegal, and RBDigital. This data is collected due to an open data initiative to get information on which books are being circulated and what people are reading. Some ethical concerns I have about this data is how it ensures privacy for the individuals checking out. The legal media that you choose to consumer should be at your own discretion. If they can track which books are being checked out, how are the guaranteeing anonymity to the consumer? One limitation to this data is the records available. This data does not go beyond 2005 and it's data for the year 2023 is incomplete, for this reason I chose to filter out 2023. Some other problems include the inconsistent publications dates and repeat titles.
 
 
 ### First Trends Over Time Chart
 
-Include a chart. Make sure to describe why you included the chart, and what patterns emerged
+This line chart shows the trends of digital and physical "self help" media being checked out from the Seattle Public Library in 2005-2022. I included this chart because they way in which people are consuming media has become more digital. I wanted to visualize at which rate are physical and digital media being consumed and how it was affected during 2020, when many people could not go to the library to get physical media. I noticed that the plot and line for physical usage class dipped near 2019-2020. On the other hand, digital media has been checked out at an exponential rate, overtaking physical media around 2018.
 
-The first chart that you will create and include will show the trend over time of your variable/topic/interest. Think carefully about what you want to communicate to your user (you may have to find relevant trends in the dataset first!). Here are some requirements to help guide your design:
+```{r, echo = FALSE, warning = FALSE}
 
-- Show more than one, but fewer than ~10 trends
-  - For example, two books, or 5 different mediums
-- You must have clear x and y axis labels
-- The chart needs a clear title 
-- You need a legend for your different line colors and a clear - legend title
-In your .Rmd file, make sure to describe why you included the chart, and what patterns emerged
+library("dplyr")
+library("stringr")
+library("ggplot2")
+SH_Checkouts_df <- read.csv("~/Downloads/Checkouts_by_Title.csv")
 
-When we say "clear" or "human readable" titles and labels, that means that you should not just display the variable name.
+SH_Checkouts_df <- SH_Checkouts_df %>% mutate(date = paste0(CheckoutYear, "-", CheckoutMonth, "-01"))
+SH_Checkouts_df$date <- as.Date(SH_Checkouts_df$date, format = "%Y-%m-%d")
+SH_Checkouts_df_2005_2022 <- SH_Checkouts_df %>% filter(date < '2023-01-01')
 
-Here's an example of how to run an R script inside an RMarkdown file:
+print_checkouts_throughout_year <- SH_Checkouts_df_2005_2022 %>%
+  group_by(CheckoutYear) %>%
+  filter(str_detect(UsageClass, "Physical") == TRUE) %>% 
+  summarize(Checkouts = sum(Checkouts, na.rm = TRUE))
 
-``````{r, echo = FALSE, warning = FALSE, code = readLines("chart1_example.R")}
+digital_checkouts_throughout_year <- SH_Checkouts_df_2005_2022 %>%
+  group_by(CheckoutYear) %>%
+  filter(str_detect(UsageClass, "Digital") == TRUE) %>% 
+  summarize(Checkouts = sum(Checkouts, na.rm = TRUE))
+
+digital_print_checkouts <- data_frame(print_checkouts_throughout_year) %>% 
+  mutate(digital = digital_checkouts_throughout_year$Checkouts)
+
+ggplot(data = digital_print_checkouts , x = CheckoutYear, y = pCheckouts) +
+  geom_point(aes(x = CheckoutYear, y = Checkouts, colour="blue")) +
+  stat_smooth(aes(x = CheckoutYear, y = Checkouts, colour="blue")) +
+  geom_point(aes(x = CheckoutYear, y = digital, colour = "red")) +
+  stat_smooth(aes(x = CheckoutYear, y = digital, colour="red")) +
+       scale_color_identity(name = "Usage Class",
+                          breaks = c("blue", "red"),
+                          labels = c("Physical", "Digital"),
+                          guide = "legend") +
+  labs(title = "Number of Self Help Print Books Checked Out per Year", 
+        x = "Checkout Year",
+        y = "Number of Checkouts")
+
+
 ```
 
 ### Second Trends Over Time Chart
 
-Include a chart. Make sure to describe why you included the chart, and what patterns emerged
+This stacked bar chart shows the trends of fiction and nonfiction "self help" media being checked out from the Seattle Public Library in 2005-2022. I included this because I was curious what proportional of self help books are fiction vs nonfiction, and which genre gets checked out more. I wanted to visualize which genre more people tend to checkout. I noticed that chart that in the past, nonfiction self help books were not very popular, however because more popular in 2018-2021. In 2022, it seems that fiction and nonfiction self help books are similarly checked out.
 
-The second chart that you will create and include will show another trend over time of your variable/topic/interest. Think carefully about what you want to communicate to your user (you may have to find relevant trends in the dataset first!). Here are some requirements to help guide your design:
+```{r, echo = FALSE}
+library("dplyr")
+library("stringr")
+library("ggplot2")
+SH_Checkouts_df <- read.csv("~/Downloads/Checkouts_by_Title.csv")
 
-- Show more than one, but fewer than ~10 trends
-  - For example, two books, or 5 different mediums
-- You must have clear x and y axis labels
-- The chart needs a clear title 
-- You need a legend for your different line colors and a clear - legend title
-In your .Rmd file, make sure to describe why you included the chart, and what patterns emerged
+SH_Checkouts_df <- SH_Checkouts_df %>% mutate(date = paste0(CheckoutYear, "-", CheckoutMonth, "-01"))
+SH_Checkouts_df$date <- as.Date(SH_Checkouts_df$date, format = "%Y-%m-%d")
+SH_Checkouts_df_2005_2022 <- SH_Checkouts_df %>% filter(date < '2023-01-01')
 
-When we say "clear" or "human readable" titles and labels, that means that you should not just display the variable name.
+genre_checkouts_throughout_year <- SH_Checkouts_df_2005_2022 %>% 
+  mutate(Nonfiction = str_detect(Subjects, "Nonfiction") == TRUE)
 
-Here's an example of how to run an R script inside an RMarkdown file:
+ggplot(genre_checkouts_throughout_year, aes(x=CheckoutYear, y=Checkouts, fill = Nonfiction)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Checkouts of Fiction vs Nonfiction Self Help Books per Year", 
+        x = "Checkout Year",
+        y = "Number of Checkouts") +
+  guides(fill = guide_legend(title = "Genre")) +
+                         scale_fill_discrete(labels = c("Fiction", "Nonfiction"))
 
-``````{r, echo = FALSE, code = readLines("chart2_example.R")}
 ```
 
 ### Your Choice
 
-The last chart is up to you. It could be a line plot, scatter plot, histogram, bar plot, stacked bar plot, and more. Here are some requirements to help guide your design:
+This stacked bar chart breaksdown the most checked out Material Types of "self help" media the Seattle Public Library in 2005-2022. I included this because I was curious what medium are most people consuming self help content. I wanted to visualize which material type do more people tend to checkout. I noticed forms of books, digital and physical, were decently well distributed, with audio and video recordings making up the final smaller portion. 
 
-- You must have clear x and y axis labels
-- The chart needs a clear title 
-- You need a legend for your different line colors and a clear legend title
 
-Here's an example of how to run an R script inside an RMarkdown file:
+```{r, echo = FALSE}
 
-``````{r, echo = FALSE, code = readLines("chart2_example.R")}
+library("dplyr")
+library("stringr")
+library("ggplot2")
+library("ggrepel")
+
+SH_Checkouts_df <- read.csv("~/Downloads/Checkouts_by_Title.csv")
+
+SH_Checkouts_df <- SH_Checkouts_df %>% mutate(date = paste0(CheckoutYear, "-", CheckoutMonth, "-01"))
+SH_Checkouts_df$date <- as.Date(SH_Checkouts_df$date, format = "%Y-%m-%d")
+SH_Checkouts_df_2005_2022 <- SH_Checkouts_df %>% filter(date < '2023-01-01')
+
+material_type_checkouts <- SH_Checkouts_df_2005_2022 %>% 
+  group_by(MaterialType) %>% 
+  summarize(Checkouts = sum(Checkouts, na.rm = TRUE)) %>% 
+  filter(Checkouts > 1000)
+
+ggplot(data = material_type_checkouts, aes(x="Material Types", y=Checkouts, fill=MaterialType)) +
+  geom_bar(stat="identity", width=1, color="Black") +
+  labs(title = "Number of Checkouts from each Material Type",
+       x = "Material Type",
+       y = "Number of Checkouts") +
+  coord_polar(theta = "y", start = 0 ) +
+   geom_label_repel(data = material_type_checkouts,
+                   aes(y = Checkouts, label = paste0(Checkouts, " checkouts")),
+                   size = 4, show.legend = FALSE, position = position_stack(vjust = .5), direction = "y") +
+  theme_void()
+
 ```
 
 
